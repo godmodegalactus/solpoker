@@ -3,11 +3,11 @@ use crate::states::{
     meta_data::MetaData, 
     card::Card, 
     enums::{CurrentGameState, MAX_NUMBER_OF_PLAYERS},
-    user_state::UserState,
+    user_data::UserData,
     user::User,
  };
 
-#[account()]
+#[account(zero_copy)]
 pub struct Game {
     pub meta_data : MetaData,
     // game id
@@ -38,7 +38,7 @@ pub struct Game {
     pub card4 : Card,
     pub card5 : Card,
     // current players playing
-    pub current_players : [UserState; 10],
+    pub current_players : [UserData; 10],
 }
 
 impl Default for Game {
@@ -61,7 +61,7 @@ impl Default for Game {
             card3 : Card::default(),
             card4 : Card::default(),
             card5 : Card::default(),
-            current_players : [UserState::default(); 10],
+            current_players : [UserData::default(); 10],
         }
     }
 }
@@ -69,7 +69,7 @@ impl Default for Game {
 impl Game {
     fn add_player(&mut self, user_pk : Pubkey, user : &mut Account<User>, transfer_lamports : u64) -> Result<()> {
         let funds_to_transfer = transfer_lamports.min(user.balance_lamports);
-        let player = UserState::new(user_pk, user.key(), funds_to_transfer);
+        let player = UserData::new(user_pk, user.key(), funds_to_transfer);
 
         for i in 0..10 {
             if self.current_players[i].user_pk == Pubkey::default() {
@@ -85,7 +85,7 @@ impl Game {
         for i in 0..10 {
             if self.current_players[i].user_pk == user_pk {
                 user.balance_lamports = user.balance_lamports.checked_add(self.current_players[i].user_balance).unwrap();
-                self.current_players[i] = UserState::default();
+                self.current_players[i] = UserData::default();
             }
             return Ok(());
         }

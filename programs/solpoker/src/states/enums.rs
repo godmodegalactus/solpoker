@@ -75,3 +75,23 @@ impl Default for CardValue {
         CardValue::Unknown
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
+#[repr(u8)]
+pub enum UserState {
+    WaitingToStart,
+    WaitingForTurn,
+    WaitingForCards,
+    WaitingForResponse,
+    Bid {
+        amount : u64,
+    },
+    Fold,
+    AllIn,
+}
+
+impl Default for UserState {
+    fn default() -> Self {
+        UserState::WaitingToStart
+    }
+}

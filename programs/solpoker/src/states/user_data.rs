@@ -1,12 +1,10 @@
 use crate::*;
-use states::card::Card;
-
-use super::user::User;
+use states::{ card::Card, enums::UserState };
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 #[repr(C)]
 /// Stores meta information about the `Account` on chain
-pub struct UserState {
+pub struct UserData {
     // user pk
     pub user_pk : Pubkey,
     // user data / address of User struct for the given user
@@ -17,23 +15,24 @@ pub struct UserState {
     pub user_stakes : u64,
     // player pot index / used when player allins
     pub pot_index : u8,
+    pub user_state : UserState,
     // updated when game ends to calculate the winner
     pub card_1 : Card,
     pub card_2 : Card,
-
     // stat data
     pub lamports_won : u64,
 }
 
-impl Default for UserState {
+impl Default for UserData {
 
     fn default() -> Self {
-        UserState {
+        UserData {
             user_pk: Pubkey::default(),
             user_data: Pubkey::default(),
             user_balance: 0,
             user_stakes: 0,
             pot_index : 0,
+            user_state : UserState::default(),
             card_1 : Card::default(),
             card_2 : Card::default(),
             lamports_won : 0,
@@ -42,14 +41,15 @@ impl Default for UserState {
     
 }
 
-impl UserState {
+impl UserData {
     pub fn new ( user_pk : Pubkey, user_data : Pubkey, transfer_lamports : u64 ) -> Self {
-        UserState {
+        UserData {
             user_pk: user_pk,
             user_data: user_data,
             user_balance: transfer_lamports,
             user_stakes: 0,
             pot_index : 0,
+            user_state : UserState::default(),
             card_1 : Card::default(),
             card_2 : Card::default(),
             lamports_won: 0,

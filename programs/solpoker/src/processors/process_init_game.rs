@@ -4,7 +4,7 @@ use instructions::init_game::InitGame;
 
 
 pub fn process( ctx: Context<InitGame>, game_id : u32, small_blind : u64, timeout_in_unix_diff: u64 ) -> Result<()> {
-    let game = &mut ctx.accounts.game;
+    let game = &mut ctx.accounts.game.load_init()?;
 
     game.meta_data = MetaData {
         data_type : states::enums::DataType::Game,

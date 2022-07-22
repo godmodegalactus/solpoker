@@ -17,3 +17,10 @@ pub struct User {
     // lamports_won 
     pub lamport_won : u64,
 }
+
+impl User {
+    pub fn add_balance( &mut self, lamports : u64 ) -> Result<()> {
+        self.balance_lamports = self.balance_lamports.checked_add(lamports).unwrap();
+        Ok(())
+    }
+}
