@@ -8,6 +8,7 @@ use instructions::{
     register_user::*,
     topup_account::*,
     join_game::*,
+    leave_game::*,
 };
 
 mod states;
@@ -23,7 +24,7 @@ pub mod solpoker {
     use super::*;
 
     pub fn initialize_instance(ctx: Context<InitInstance>, manager_fees_in_bps : u8 ) -> Result<()> {
-        processors::process_init_instance::process(ctx, manager_fees_in_bps)
+        processors::process_init_context::process(ctx, manager_fees_in_bps)
     }
 
     pub fn initialize_game( ctx: Context<InitGame>, game_id : u32, small_blind : u64, timeout_in_unix_diff: u64) -> Result<()> {
@@ -38,4 +39,15 @@ pub mod solpoker {
         processors::process_topup_account::process(ctx, lamports)
     }
 
+    pub fn join_game ( ctx: Context<JoinGame>, lamports: u64) -> Result<()> {
+        processors::process_join_game::process(ctx, lamports)
+    }
+
+    pub fn leave_game ( ctx: Context<LeaveGame>) -> Result<()> {
+        processors::process_leave_game::process(ctx)
+    }
+
+    pub fn leave_game_forced ( ctx: Context<LeaveGameForced>) -> Result<()> {
+        processors::process_leave_game::process_forced(ctx)
+    }
 }

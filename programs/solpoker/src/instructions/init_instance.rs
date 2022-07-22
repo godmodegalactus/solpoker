@@ -1,5 +1,5 @@
 use crate::*;
-use crate::states::{ manager::Manager };
+use crate::states::{ game_context::GameContext };
 use std::{mem::size_of};
 use anchor_spl::token::{ Token, Mint, TokenAccount};
 
@@ -13,10 +13,10 @@ pub struct InitInstance<'info> {
         init,
         seeds = [b"solpoker_instance", manager.key().as_ref(), base_mint.key().as_ref()],
         bump,
-        space = 12 + size_of::<Manager>(),
+        space = 12 + size_of::<GameContext>(),
         payer = manager,
     )]
-    pub manager_info : Box<Account<'info, Manager>>,
+    pub game_context : Box<Account<'info, GameContext>>,
 
     #[account(
         init,

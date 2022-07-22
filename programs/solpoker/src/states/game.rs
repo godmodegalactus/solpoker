@@ -7,6 +7,10 @@ use crate::states::{
     user::User,
  };
 
+ use errors::{SolPokerErrors, check};
+
+use super::enums::DataType;
+
 #[account(zero_copy)]
 pub struct Game {
     pub meta_data : MetaData,
@@ -28,6 +32,10 @@ pub struct Game {
     pub last_update_time : u64,
     // current state 
     pub current_state: CurrentGameState,
+    // small blind user index
+    pub small_blind_user_index : u8,
+    // number of user joined
+    pub number_of_users_joined : u8,
     // pots / as pots can be splitted on allins
     pots: [u64; 10],
     current_pot_index : u8,
@@ -62,33 +70,51 @@ impl Default for Game {
             card4 : Card::default(),
             card5 : Card::default(),
             current_players : [UserData::default(); 10],
+            small_blind_user_index : 0,
+            number_of_users_joined : 0,
         }
     }
 }
 
 impl Game {
-    fn add_player(&mut self, user_pk : Pubkey, user : &mut Account<User>, transfer_lamports : u64) -> Result<()> {
+
+    pub fn check(self) -> Result<()> {
+        if self.meta_data.data_type == DataType::Game && self.meta_data.is_initialized == true {
+            Ok(())
+        }
+        else {
+            Err(error!(SolPokerErrors::GameNotCorrectlyInitialized))
+        }
+    }
+
+    pub fn add_player(&mut self, user_pk : Pubkey, user : &mut Account<User>, transfer_lamports : u64) -> Result<()> {
         let funds_to_transfer = transfer_lamports.min(user.balance_lamports);
+        check(funds_to_transfer > self.small_blind, SolPokerErrors::AmountLessThanSmallBlind)?;
+
         let player = UserData::new(user_pk, user.key(), funds_to_transfer);
 
         for i in 0..10 {
             if self.current_players[i].user_pk == Pubkey::default() {
+                // remove staked money from user balance
                 user.balance_lamports = user.balance_lamports.saturating_sub(funds_to_transfer);
                 self.current_players[i] = player;
+                self.number_of_users_joined = self.number_of_users_joined.saturating_add(1);
+                return Ok(());
             }
-            return Ok(());
         }
         Err(error!(errors::SolPokerErrors::GameIsFull))
     }
 
-    fn remove_player(&mut self, user_pk : Pubkey, user : &mut Account<User>,) -> Result<()> {
+    pub fn remove_player(&mut self, user_pk : Pubkey, user : &mut Account<User>,) -> Result<()> {
         for i in 0..10 {
             if self.current_players[i].user_pk == user_pk {
+                // return money staked in game
                 user.balance_lamports = user.balance_lamports.checked_add(self.current_players[i].user_balance).unwrap();
                 self.current_players[i] = UserData::default();
+                self.number_of_users_joined = self.number_of_users_joined.saturating_sub(1);
+                return Ok(());
             }
-            return Ok(());
         }
-        Err(error!(errors::SolPokerErrors::CannotFindUserInGame))
+        Err(error!(SolPokerErrors::CannotFindUserInGame))
     }
 }

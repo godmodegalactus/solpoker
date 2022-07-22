@@ -8,6 +8,8 @@ pub struct User {
     pub owner_pk : Pubkey,
     // base mint
     pub base_mint : Pubkey,
+    // game context
+    pub game_context : Pubkey,
     // number of base_token in lamports
     pub balance_lamports : u64,
     // number of games won

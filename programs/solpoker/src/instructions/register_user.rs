@@ -1,6 +1,6 @@
 use crate::*;
 
-use states::{ manager::Manager, user::User, enums::DataType };
+use states::{ game_context::GameContext, user::User, enums::DataType };
 use anchor_spl::token::{  Mint };
 use std::{mem::size_of};
 
@@ -10,17 +10,17 @@ pub struct RegisterUser<'info> {
     pub owner : Signer<'info>,
 
     #[account(
-        constraint = manager_info.meta_data.data_type == DataType::Manager,
-        constraint = manager_info.meta_data.is_initialized == true, 
+        constraint = game_context.meta_data.data_type == DataType::Manager,
+        constraint = game_context.meta_data.is_initialized == true, 
     )]
-    pub manager_info : Box<Account<'info, Manager>>,
+    pub game_context : Box<Account<'info, GameContext>>,
 
-    #[account( constraint = manager_info.base_mint == base_mint.key() )]
+    #[account( constraint = game_context.base_mint == base_mint.key() )]
     pub base_mint : Box<Account<'info, Mint>>,
 
     #[account(
         init,
-        seeds = [b"solpoker_user", base_mint.key().as_ref(), owner.key().as_ref()],
+        seeds = [b"solpoker_user", game_context.key().as_ref(), owner.key().as_ref()],
         bump,
         space = 12 + size_of::<User>(),
         payer = owner,

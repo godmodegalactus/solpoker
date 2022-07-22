@@ -3,10 +3,10 @@ use crate::states::meta_data::MetaData;
 use crate::*;
 
 #[account()]
-pub struct Manager {
+pub struct GameContext {
     pub meta_data: MetaData,
     // public key of manager
-    pub manager_pk : Pubkey,
+    pub game_context : Pubkey,
     // game count
     pub count_of_games_currently_running : u32,
     // base mint
