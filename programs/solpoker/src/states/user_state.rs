@@ -1,3 +1,5 @@
+use crate::*;
+use states::card::Card;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Copy)]
 #[repr(C)]

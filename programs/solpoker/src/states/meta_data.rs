@@ -1,3 +1,6 @@
+use crate::*;
+use crate::states::enums::DataType;
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Copy)]
 #[repr(C)]
 /// Stores meta information about the `Account` on chain

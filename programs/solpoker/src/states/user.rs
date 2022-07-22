@@ -1,3 +1,5 @@
+use crate::*;
+use crate::states::meta_data::MetaData;
 
 #[account()]
 pub struct User {

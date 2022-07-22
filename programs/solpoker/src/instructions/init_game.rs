@@ -1,6 +1,4 @@
-use anchor_lang::prelude::*;
-use anchor_spl::states::Mint;
-use crate::states::game;
+use crate::*;
 
 #[derive(Accounts)]
 pub struct InitGame<'info> {

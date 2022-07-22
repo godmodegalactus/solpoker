@@ -1,3 +1,6 @@
+use crate::*;
+use crate::states::{ meta_data::MetaData, card::Card, enums::CurrentGameState };
+
 #[account()]
 pub struct Game {
     meta_data : MetaData,

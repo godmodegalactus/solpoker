@@ -1,7 +1,9 @@
 // this is the manager of whole program
+use crate::states::meta_data::MetaData;
+use crate::*;
 
 #[account()]
-pub struct manager {
+pub struct Manager {
     meta_data: MetaData,
     // public key of manager
     manager_pk : Pubkey,
@@ -13,4 +15,6 @@ pub struct manager {
     treasury_account : Pubkey,
     // manager fees in bps
     manager_fees : u8,
+    // treasury collected
+    treasury_collected : u64,
 }

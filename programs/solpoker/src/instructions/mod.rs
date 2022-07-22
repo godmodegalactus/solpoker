@@ -1,2 +1,2 @@
-mod init_game;
-mod init_instance;
+pub mod init_game;
+pub mod init_instance;

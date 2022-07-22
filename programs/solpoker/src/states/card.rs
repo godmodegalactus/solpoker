@@ -1,5 +1,7 @@
+use crate::*;
+use crate::states::{ enums::Suit, enums::CardValue };
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 #[repr(C)]
 pub struct Card {
     suit : Suit,
@@ -9,8 +11,8 @@ pub struct Card {
 impl Default for Card {
     fn default() -> Self {
         Card {
-            suit: Suit::unknown,
-            value: CardValue::unknown,
+            suit: Suit::Unknown,
+            value: CardValue::Unknown,
         }
     }
 }
