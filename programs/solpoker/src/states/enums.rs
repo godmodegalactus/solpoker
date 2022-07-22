@@ -1,6 +1,6 @@
 use crate::*;
 
-const MAX_NUMBER_OF_PLAYERS : u8 = 10;
+pub const MAX_NUMBER_OF_PLAYERS : u8 = 10;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]

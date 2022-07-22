@@ -8,5 +8,5 @@ pub struct MetaData {
     pub data_type: DataType,
     pub version: u8,
     pub is_initialized: bool,
-    pub extra_info: [u8; 5],
 }
+
