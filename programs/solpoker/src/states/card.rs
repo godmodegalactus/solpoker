@@ -16,3 +16,11 @@ impl Default for Card {
         }
     }
 }
+
+impl Card {
+
+    pub fn valid(self) -> bool {
+        self.suit != Suit::Unknown && self.value != CardValue::Unknown
+    }
+    
+}

@@ -83,11 +83,13 @@ pub enum UserState {
     WaitingForTurn,
     WaitingForCards,
     WaitingForResponse,
+    Check,
     Bid {
         amount : u64,
     },
     Fold,
     AllIn,
+    Leaving,
 }
 
 impl Default for UserState {

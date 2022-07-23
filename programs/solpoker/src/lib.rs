@@ -9,7 +9,10 @@ use instructions::{
     topup_account::*,
     join_game::*,
     leave_game::*,
+    update_game::*,
 };
+
+use states::card::Card;
 
 mod states;
 mod processors;
@@ -49,5 +52,9 @@ pub mod solpoker {
 
     pub fn leave_game_forced ( ctx: Context<LeaveGameForced>) -> Result<()> {
         processors::process_leave_game::process_forced(ctx)
+    }
+
+    pub fn update_game (ctx : Context<UpdateGame>, card1 : Card, card2 : Card, card3 : Card) -> Result<()> {
+        processors::process_update_game::process(ctx, [card1, card2, card3])
     }
 }

@@ -2,14 +2,12 @@ use crate::*;
 use crate::states::{ 
     meta_data::MetaData, 
     card::Card, 
-    enums::{CurrentGameState, MAX_NUMBER_OF_PLAYERS},
+    enums::{DataType, CurrentGameState, UserState, MAX_NUMBER_OF_PLAYERS},
     user_data::UserData,
     user::User,
  };
 
  use errors::{SolPokerErrors, check};
-
-use super::enums::DataType;
 
 #[account(zero_copy)]
 pub struct Game {
@@ -33,12 +31,18 @@ pub struct Game {
     // current state 
     pub current_state: CurrentGameState,
     // small blind user index
-    pub small_blind_user_index : u8,
+    pub big_blind_user_index : u8,
     // number of user joined
     pub number_of_users_joined : u8,
-    // pots / as pots can be splitted on allins
-    pots: [u64; 10],
-    current_pot_index : u8,
+    // pots
+    pub current_pot : u64,
+    // bid start index
+    pub bid_start_index : u8,
+    // bids this round
+    pub bids_this_round : u64,
+    // max bid by a player this round
+    pub max_bid_this_round : u64,
+
     // will be opened as game progresses
     pub card1 : Card,
     pub card2 : Card,
@@ -47,6 +51,9 @@ pub struct Game {
     pub card5 : Card,
     // current players playing
     pub current_players : [UserData; 10],
+    pub current_player : u8,
+    // when player updates the game
+    pub can_update : bool,
 }
 
 impl Default for Game {
@@ -62,16 +69,20 @@ impl Default for Game {
             timeout_in_unix_diff : 0,
             last_update_time : 0,
             current_state : CurrentGameState::NotYetStarted,
-            pots : [0; 10],
-            current_pot_index : 0,
             card1 : Card::default(),
             card2 : Card::default(),
             card3 : Card::default(),
             card4 : Card::default(),
             card5 : Card::default(),
             current_players : [UserData::default(); 10],
-            small_blind_user_index : 0,
+            big_blind_user_index : 0,
             number_of_users_joined : 0,
+            max_bid_this_round : 0,
+            current_pot : 0,
+            bids_this_round : 0,
+            bid_start_index : 0,
+            current_player : 0,
+            can_update :false,
         }
     }
 }
@@ -93,7 +104,8 @@ impl Game {
 
         let player = UserData::new(user_pk, user.key(), funds_to_transfer);
 
-        for i in 0..10 {
+        let max_number_of_players:usize = self.max_number_of_players as usize;
+        for i in 0..max_number_of_players {
             if self.current_players[i].user_pk == Pubkey::default() {
                 // remove staked money from user balance
                 user.balance_lamports = user.balance_lamports.saturating_sub(funds_to_transfer);
@@ -106,7 +118,7 @@ impl Game {
     }
 
     pub fn remove_player(&mut self, user_pk : Pubkey, user : &mut Account<User>,) -> Result<()> {
-        for i in 0..10 {
+        for i in 0..self.max_number_of_players as usize {
             if self.current_players[i].user_pk == user_pk {
                 // return money staked in game
                 user.balance_lamports = user.balance_lamports.checked_add(self.current_players[i].user_balance).unwrap();
@@ -116,5 +128,76 @@ impl Game {
             }
         }
         Err(error!(SolPokerErrors::CannotFindUserInGame))
+    }
+
+    pub fn find_player_mut(&mut self, user_pk : Pubkey) -> Option<&mut UserData> {
+        for i in 0..self.max_number_of_players as usize {
+            if self.current_players[i].user_pk == user_pk {
+                return Some(&mut self.current_players[i]);
+            }
+        }
+        None
+    }
+    
+    pub fn find_player(self, user_pk : Pubkey) -> Option<UserData> {
+        for i in 0..self.max_number_of_players as usize {
+            if self.current_players[i].user_pk == user_pk {
+                return Some(self.current_players[i]);
+            }
+        }
+        None
+    }
+
+    pub fn get_next_player_index(self, index: usize) -> Option<usize> {
+        let max_number_of_players : usize = self.max_number_of_players as usize;
+        let mut current_index = if index == max_number_of_players { 0 } else {index + 1};
+        while current_index != index {
+            let player = self.current_players[current_index];
+            let ignore_in_states = vec![UserState::Fold, UserState::AllIn, UserState::Leaving];
+
+            if player.user_pk != Pubkey::default() && !ignore_in_states.iter().any(|x| *x == player.user_state) {
+                return Some(current_index);
+            } 
+            current_index = if current_index == max_number_of_players { 0 } else {current_index + 1};    
+        }
+        None
+    }
+
+    pub fn transfer_from_player_at_index(&mut self, player_index: usize, lamports : u64) -> Result<()> {
+        let current_player = &mut self.current_players[player_index];
+
+        if current_player.user_state == UserState::AllIn {
+            return Ok(());
+        }
+        
+        // if player has enough balance
+        if current_player.user_balance > lamports {
+            current_player.user_balance = current_player.user_balance.saturating_sub(lamports);
+            self.current_pot = self.current_pot.saturating_add(lamports);
+            self.bids_this_round = self.bids_this_round.saturating_add(lamports);
+            current_player.user_stakes = current_player.user_stakes.saturating_add(lamports);
+            current_player.current_user_bid = current_player.current_user_bid.saturating_add(lamports);
+        }
+        // if player has less balance then required we create a new pot / player goes allin
+        else {
+            self.current_pot = self.current_pot.saturating_add(current_player.user_balance);
+            self.bids_this_round = self.bids_this_round.saturating_add(lamports);
+            current_player.user_stakes = current_player.user_stakes.saturating_add(current_player.user_balance);
+            current_player.current_user_bid = current_player.current_user_bid.saturating_add(current_player.user_balance);
+            current_player.user_balance = 0;
+            current_player.user_state = UserState::AllIn;
+        }
+        Ok(())
+    }
+
+    pub fn reset_round(&mut self){
+        self.bids_this_round = 0;
+        self.max_bid_this_round = 0;
+
+        for i in 0..self.max_number_of_players as usize {
+            if self.current_players[i].user_pk != Pubkey::default() {
+                self.current_players[i].current_user_bid = 0;
+            }
+        }
     }
 }

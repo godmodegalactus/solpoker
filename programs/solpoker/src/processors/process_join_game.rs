@@ -7,5 +7,6 @@ pub fn process(ctx : Context<JoinGame>, lamports: u64) -> Result<()> {
     check(game.base_mint == ctx.accounts.user.base_mint.key(), SolPokerErrors::InvalidMint)?;
     let user = &mut ctx.accounts.user;
     game.add_player(ctx.accounts.owner.key(), user, lamports)?;
+    game.number_of_users_joined = game.number_of_users_joined.saturating_add(1);
     Ok(())
 }

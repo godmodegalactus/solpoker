@@ -13,8 +13,9 @@ pub struct UserData {
     pub user_balance : u64,
     // user stakes in current game
     pub user_stakes : u64,
-    // player pot index / used when player allins
-    pub pot_index : u8,
+    // current user bids / bids in current game
+    pub current_user_bid : u64,
+    // user state
     pub user_state : UserState,
     // updated when game ends to calculate the winner
     pub card_1 : Card,
@@ -31,7 +32,7 @@ impl Default for UserData {
             user_data: Pubkey::default(),
             user_balance: 0,
             user_stakes: 0,
-            pot_index : 0,
+            current_user_bid : 0,
             user_state : UserState::default(),
             card_1 : Card::default(),
             card_2 : Card::default(),
@@ -48,7 +49,7 @@ impl UserData {
             user_data: user_data,
             user_balance: transfer_lamports,
             user_stakes: 0,
-            pot_index : 0,
+            current_user_bid : 0,
             user_state : UserState::default(),
             card_1 : Card::default(),
             card_2 : Card::default(),
