@@ -1,4 +1,4 @@
-use crate::{*, states::{card::Card}};
+use crate::{*, states::{card::Card}, errors::check};
 use instructions::update_game::UpdateGame;
 use states::{ enums::CurrentGameState, enums::UserState };
 use errors::{SolPokerErrors};
@@ -17,11 +17,11 @@ pub fn process(ctx : Context<UpdateGame>, cards : [Card; 3]) -> Result<()> {
             //----------------------------------------------------
             CurrentGameState::NotYetStarted => {
                 // check how many player are still playing
-                let number_of_players = game.current_players.iter().filter(|x| x.user_pk != Pubkey::default()).count();
+                let number_of_players = game.players.iter().filter(|x| x.user_pk != Pubkey::default()).count();
                 if number_of_players > 2 {
                     // update states for the players
                     for player_index in 0..number_of_players {
-                        game.current_players[player_index].user_state = UserState::WaitingForCards;
+                        game.players[player_index].user_state = UserState::WaitingForCards;
                     }
                     
                     // update small blind player index and transfer small and big blind
@@ -47,30 +47,30 @@ pub fn process(ctx : Context<UpdateGame>, cards : [Card; 3]) -> Result<()> {
             CurrentGameState::NoCardsShown | CurrentGameState::ThreeCardsShown | CurrentGameState::FourCardsShown | CurrentGameState::AllCardsShown => {
                 // check response from current player
                 let player_index = game.current_player as usize;
-                match game.current_players[player_index].user_state {
+                match game.players[player_index].user_state {
                     // check of fold in invalid cases
                     UserState::Check | UserState::WaitingForCards | UserState::WaitingForResponse | UserState::WaitingForTurn | UserState::WaitingToStart => {
-                        if game.bids_this_round > 0 {
-                            game.current_players[player_index].user_state = UserState::Fold;
+                        if game.total_bids_this_round > 0 {
+                            game.players[player_index].user_state = UserState::Fold;
                         }
                         else {
-                            game.current_players[player_index].user_state = UserState::WaitingForTurn;
+                            game.players[player_index].user_state = UserState::WaitingForTurn;
                         }
                     },
-                    UserState::AllIn | UserState::Leaving | UserState::Fold => {
-                        // do nohing
-                    },
                     UserState::Bid { amount } => {
-                        let total_player_bid = game.current_players[player_index].current_user_bid;
+                        let total_player_bid = game.players[player_index].current_user_bid;
                         if total_player_bid >= game.max_bid_this_round {
                             game.transfer_from_player_at_index( player_index, amount)?;
-                            game.current_players[player_index].user_state = UserState::WaitingForTurn;
+                            game.players[player_index].user_state = UserState::WaitingForTurn;
                             if total_player_bid > game.max_bid_this_round {
                                 game.max_bid_this_round = total_player_bid;
                                 game.bid_start_index = game.current_player;
                             }
                         }
-                    }
+                    },
+                    UserState::AllIn | UserState::Leaving | UserState::Fold | UserState::Left => {
+                        // do nohing
+                    },
                     // _ => {
                     //     // for no reponse from the player / folding
                     //     player.user_state = UserState::Fold;
@@ -118,7 +118,18 @@ pub fn process(ctx : Context<UpdateGame>, cards : [Card; 3]) -> Result<()> {
                 }
                 
                 Ok(())
-            }
+            },
+            CurrentGameState::GameEnded => {
+                for i in 0 .. game.max_number_of_players as usize {
+                    let player = game.players[i];
+                    if player.user_state != UserState::Fold {
+                        check(player.card_1.valid(), SolPokerErrors::UserCardsMissing)?;
+                        check(player.card_2.valid(), SolPokerErrors::UserCardsMissing)?;
+                    }
+                    game.current_state = CurrentGameState::CalculatingWinner;
+                }
+                Ok(())
+            },
             _ => {
                 Err(error!(SolPokerErrors::UnknownState))
             }

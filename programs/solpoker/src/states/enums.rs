@@ -90,10 +90,22 @@ pub enum UserState {
     Fold,
     AllIn,
     Leaving,
+    Left,
 }
 
 impl Default for UserState {
     fn default() -> Self {
         UserState::WaitingToStart
     }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
+#[repr(u8)]
+pub enum UserMoves {
+    Fold,
+    Check,
+    Call,
+    Raise {
+        amount : u64
+    },
 }

@@ -24,6 +24,12 @@ pub enum SolPokerErrors {
     NotEnoughCards,
     #[msg("Invalid State")]
     InvalidState,
+    #[msg("User cards missing")]
+    UserCardsMissing,
+    #[msg("Cannot check when bidding is undergoing")]
+    CannotCheck,
+    #[msg("Raise amount should be higher than current bid")]
+    RaiseAmountLower,
 }
 
 pub fn check(result : bool, error : SolPokerErrors) -> Result<()> 
@@ -33,9 +39,4 @@ pub fn check(result : bool, error : SolPokerErrors) -> Result<()>
     } else {
         Err(error.into())
     }
-}
-
-pub fn throw(error : SolPokerErrors) -> Result<()>
-{
-    Err(error.into())
 }

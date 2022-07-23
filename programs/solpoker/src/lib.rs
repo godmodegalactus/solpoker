@@ -10,9 +10,10 @@ use instructions::{
     join_game::*,
     leave_game::*,
     update_game::*,
+    player_move::*,
 };
 
-use states::card::Card;
+use states::{ card::Card, enums::{UserMoves} };
 
 mod states;
 mod processors;
@@ -23,6 +24,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 #[program]
 pub mod solpoker {
     use instructions::register_user::RegisterUser;
+    use states::enums::UserMoves;
 
     use super::*;
 
@@ -56,5 +58,9 @@ pub mod solpoker {
 
     pub fn update_game (ctx : Context<UpdateGame>, card1 : Card, card2 : Card, card3 : Card) -> Result<()> {
         processors::process_update_game::process(ctx, [card1, card2, card3])
+    }
+
+    pub fn player_move (ctx : Context<PlayerMove>, user_move : UserMoves) ->Result<()> {
+        processors::process_player_move::process(ctx, user_move)
     }
 }
