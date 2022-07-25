@@ -8,5 +8,5 @@ pub struct PlayerMove<'info> {
     pub user : Signer<'info>,
 
     #[account(mut)]
-    pub game : AccountLoader<'info, Game>,
+    pub game : Box<Account<'info, Game>>,
 }

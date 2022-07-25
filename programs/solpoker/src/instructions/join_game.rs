@@ -12,8 +12,8 @@ pub struct JoinGame<'info> {
         constraint = user.meta_data.is_initialized == true,
         constraint = user.owner_pk == owner.key(),
     )]
-    pub user : Account<'info, User>,
+    pub user : Box<Account<'info, User>>,
 
     #[account(mut)]
-    pub game : AccountLoader<'info, Game>,
+    pub game : Box<Account<'info, Game>>,
 }

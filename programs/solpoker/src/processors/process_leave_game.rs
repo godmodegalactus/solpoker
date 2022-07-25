@@ -2,8 +2,8 @@ use crate::{*, states::enums::UserState};
 use errors::{SolPokerErrors, check};
 
 pub fn process(ctx : Context<LeaveGame>) -> Result<()> {
-    let game = &mut ctx.accounts.game.load_mut()?;
-    game.check()?;
+    let game = &mut ctx.accounts.game;
+    // game.check()?;
     check(game.base_mint == ctx.accounts.user.base_mint.key(), SolPokerErrors::InvalidMint)?;
     game.number_of_users_joined = game.number_of_users_joined.saturating_sub(1);
     //update state for user to leaving
@@ -18,7 +18,7 @@ pub fn process(ctx : Context<LeaveGame>) -> Result<()> {
 }
 
 pub fn process_forced(ctx: Context<LeaveGameForced>) -> Result<()> {
-    let game = &mut ctx.accounts.game.load_mut()?;
+    let game = &mut ctx.accounts.game;
     game.check()?;
     check(game.base_mint == ctx.accounts.user.base_mint.key(), SolPokerErrors::InvalidMint)?;
     check(game.game_oracle == ctx.accounts.oracle.key(), SolPokerErrors::InvalidOracle)?;

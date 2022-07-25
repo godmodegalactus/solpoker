@@ -32,8 +32,8 @@ pub mod solpoker {
         processors::process_init_context::process(ctx, manager_fees_in_bps)
     }
 
-    pub fn initialize_game( ctx: Context<InitGame>, game_id : u32, small_blind : u64, timeout_in_unix_diff: u64) -> Result<()> {
-        processors::process_init_game::process(ctx, game_id, small_blind, timeout_in_unix_diff)
+    pub fn initialize_game( ctx: Context<InitGame>, small_blind : u64, timeout_in_unix_diff: u64) -> Result<()> {
+        processors::process_init_game::process(ctx, small_blind, timeout_in_unix_diff)
     }
 
     pub fn register_user( ctx: Context<RegisterUser> ) -> Result<()> {

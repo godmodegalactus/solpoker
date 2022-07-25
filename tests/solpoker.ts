@@ -53,7 +53,7 @@ describe("solpoker", () => {
   const gameOracle = web3.Keypair.generate();
   let game : web3.PublicKey = null;
   it("Game Created", async () => {
-    game = await utils.createGame( adminKey, gameOracle, gameContext, mint, 0);
+    game = await utils.createGame( adminKey, gameOracle, gameContext, mint);
     mlog.log("game initialized", game);
   })
 

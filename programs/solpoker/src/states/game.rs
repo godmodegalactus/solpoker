@@ -9,11 +9,13 @@ use crate::states::{
 
  use errors::{SolPokerErrors, check};
 
-#[account(zero_copy)]
+ #[account()]
 pub struct Game {
     pub meta_data : MetaData,
-    // game id
-    pub game_id : u32,
+    // game context
+    pub game_context : Pubkey,
+    // context manger
+    pub manager : Pubkey,
     // oracle
     pub game_oracle : Pubkey,
     // base mint
@@ -60,7 +62,8 @@ impl Default for Game {
     fn default() -> Self {
         Game {
             meta_data : MetaData { data_type: states::enums::DataType::Unknown, version: 0, is_initialized: false },
-            game_id : 0,
+            game_context : Pubkey::default(),
+            manager : Pubkey::default(),
             game_oracle : Pubkey::default(),
             base_mint : Pubkey::default(),
             game_number : 0,
@@ -89,7 +92,7 @@ impl Default for Game {
 
 impl Game {
 
-    pub fn check(self) -> Result<()> {
+    pub fn check(&self) -> Result<()> {
         if self.meta_data.data_type == DataType::Game && self.meta_data.is_initialized == true {
             Ok(())
         }
@@ -148,7 +151,7 @@ impl Game {
         None
     }
 
-    pub fn get_next_player_index(self, index: usize) -> Option<usize> {
+    pub fn get_next_player_index(&self, index: usize) -> Option<usize> {
         let max_number_of_players : usize = self.max_number_of_players as usize;
         let mut current_index = if index == max_number_of_players { 0 } else {index + 1};
         while current_index != index {

@@ -8,24 +8,49 @@ import {
 import { assert } from "chai";
 
 import * as mlog from "mocha-logger"
+import _ from "lodash";
 
-// const DataType = {
-//     Unknown: {},
-//     Context: {},
-//     Game: {},
-//     User: {},
-//   };
 
-type DataType = | {unknown:{}} | {context:{}} | {game:{}} | {user:{}};
+const eUnknown = {unknown:{}};
+// data types
+const eContext = {context:{}};
+const eGame = {game:{}};
+const eUser = {user:{}};
+type DataType = {unknown:{}} | {context:{}} | {game:{}} | {user:{}};
+const dataTypes = [eContext, eUnknown, eGame, eUser]
+
+// game states
+const eNotStartedYet = {notYetStarted: {}};
+const eNoCardsShown = {notYetStarted: {}};
+const eThreeCardsShown = {notYetStarted: {}};
+const eFourCardsShown = {notYetStarted: {}};
+const eAllCardsShown = {notYetStarted: {}};
+const eGameEnded = {notYetStarted: {}};
+const eCalculatingWinner = {notYetStarted: {}};
+type CurrentGameState = {notYetStarted: {}} | {noCardsShown:{}} | {threeCardsShown:{}} | {fourCardsShown:{}} | {allCardsShown:{}} | {gameEnded:{}} | {calculatingWinner:{}}
+const gameStates = [eNotStartedYet, eNoCardsShown, eThreeCardsShown, eFourCardsShown, eAllCardsShown, eGameEnded, eCalculatingWinner];
+
+// suits
+const eClubs = {clubs : {}}
+const eDimonds = {dimonds : {}}
+const eHearts = {hearts : {}}
+const eSpades = {spades : {}}
+const suites = [eClubs, eDimonds, eHearts, eSpades];
+export type Suit = {clubs : {}} | {dimonds : {}} | {hearts : {}} | {spades : {}}
+
+// card value
+
+
 type SolPokerInstance = anchor.IdlAccounts<Solpoker>["gameContext"];
-type Metadata = anchor.IdlTypes<Solpoker>["MetaData"];
-type GameInstance = anchor.IdlAccounts<Solpoker>["game"];
+type Metadata = Omit<anchor.IdlTypes<Solpoker>["MetaData"], "dataType"> & { dataType: DataType };
+type GameInstance = Omit<anchor.IdlAccounts<Solpoker>["game"], "currentState"> & {currentState: CurrentGameState};
 
 export class SolpokerUtils {
 
     connection : web3.Connection;
     program : Program<Solpoker>;
     programId : web3.PublicKey;
+    zeroBN = this.getBN(0);
 
     constructor(connection : web3.Connection, program : Program<Solpoker>){
         this.connection = connection;
@@ -53,9 +78,7 @@ export class SolpokerUtils {
             }).signers([manager]).rpc();
         console.log("Your transaction signature", tx);
         this.connection.confirmTransaction(tx);
-
-        type DT = anchor.IdlTypes<Solpoker>["DataType"] & { ty : DataType };
-        
+        notYetStarted: {}
         const instance : SolPokerInstance = await this.program.account.gameContext.fetch(gameContext);
 
         assert(instance.manager.equals(manager.publicKey));
@@ -68,10 +91,38 @@ export class SolpokerUtils {
         const metaData : Metadata = instance.metaData;
         assert(metaData.isInitialized == true);
         assert(metaData.version == 1);
-        const dataType : DT = metaData.dataType;
-        //mlog.log(dataType.ty == DataType.)
+        mlog.log(metaData.dataType.toString());
+        assert(_.isEqual(metaData.dataType, eContext ))
 
         return [gameContext, treasuryAccount]
+    }
+
+    getBN(number: number):anchor.BN {
+        return new anchor.BN(number)
+    }
+
+    printGame(gameData : GameInstance)
+    {
+        mlog.log("\nGAME DATA\n");
+        mlog.log("manager :" + gameData.manager.toString() );
+        mlog.log("game_context :" + gameData.gameContext.toString() );
+        mlog.log("game_oracle :" + gameData.gameOracle.toString() );
+        mlog.log("base_mint :" + gameData.baseMint.toString() );
+        let currentState : CurrentGameState = gameData.currentState;
+        mlog.log("current_game_state : " + gameStates.find(x => _.isEqual(x, currentState)));
+        mlog.log("game_number :" + gameData.gameNumber );
+        mlog.log("small_blind :" + gameData.smallBlind.toString() );
+        mlog.log("max_number_of_players :" + gameData.maxNumberOfPlayers );
+        mlog.log("timeout_in_unix_diff :" + gameData.timeoutInUnixDiff.toString() );
+        mlog.log("last_update_time :" + gameData.lastUpdateTime.toString());
+        mlog.log("big_blind_user_index :" + gameData.bigBlindUserIndex.toString() );
+        mlog.log("number_of_users_joined :" + gameData.numberOfUsersJoined.toString() );
+        mlog.log("current_pot :" + gameData.currentPot.toString() );
+        mlog.log("bid_start_index :" + gameData.bidStartIndex.toString() );
+        mlog.log("total_bids_this_round :" + gameData.totalBidsThisRound.toString() );
+        mlog.log("max_bid_this_round :" + gameData.maxBidThisRound.toString() );
+        mlog.log("current_player :" + gameData.currentPlayer.toString() );
+        mlog.log("can_update :" + gameData.canUpdate.toString() );
     }
 
     async createGame(
@@ -79,19 +130,20 @@ export class SolpokerUtils {
         gameOracle : web3.Keypair,
         gameContext : web3.PublicKey,
         mint : web3.PublicKey,
-        gameNumber : number,
+        smallBlind : anchor.BN = new anchor.BN(web3.LAMPORTS_PER_SOL),
+        timeout : anchor.BN = new anchor.BN(20),
     ) : Promise<web3.PublicKey> 
     {
-        const [game, _gameBump] = await web3.PublicKey.findProgramAddress( [Buffer.from("solpoker_game"), manager.publicKey.toBuffer(), mint.toBuffer(), new anchor.BN(gameNumber).toBuffer("le")], this.programId);
+        const [game, _gameBump] = await web3.PublicKey.findProgramAddress( [Buffer.from("solpoker_game"), manager.publicKey.toBuffer(), mint.toBuffer()], this.programId);
 
         let countOfGamesCurrentlyRunning = 0;
         {
             const instance : SolPokerInstance = await this.program.account.gameContext.fetch(gameContext);
             countOfGamesCurrentlyRunning = instance.countOfGamesCurrentlyRunning;
         }
-        
-        await this.program.methods
-            .initializeGame(gameNumber, new anchor.BN(web3.LAMPORTS_PER_SOL),new anchor.BN(20))
+        mlog.log("Creating game")
+        const tx = await this.program.methods
+            .initializeGame(smallBlind, timeout)
             .accounts({
                 manager : manager.publicKey,
                 gameOracle: gameOracle.publicKey,
@@ -102,20 +154,35 @@ export class SolpokerUtils {
             })
             .signers([manager, gameOracle])
             .rpc();
-
-        type DataType = anchor.IdlTypes<Solpoker>["DataType"];
-        const gameData : GameInstance = await this.program.account.game.fetch(game);
-
+        this.connection.confirmTransaction(tx);
+        mlog.log("Game created")
         {
             const instance : SolPokerInstance = await this.program.account.gameContext.fetch(gameContext);
             assert( instance.countOfGamesCurrentlyRunning - countOfGamesCurrentlyRunning == 1);
         }
-        
+
+        const gameData : GameInstance = await this.program.account.game.fetch(game);
         const metaData : Metadata = gameData.metaData;
         assert(metaData.isInitialized == true);
         assert(metaData.version == 1);
         const dataType : DataType = metaData.dataType;
-        //mlog.log(dataType == {name : "Game"});
+        assert(_.isEqual(dataType, eGame));
+        let currentState : CurrentGameState = gameData.currentState;
+        assert(_.isEqual(currentState, eNotStartedYet));
+        assert(gameData.bidStartIndex == 0);
+        assert(gameData.bigBlindUserIndex == 0);
+        assert(gameData.canUpdate == false);
+        assert(gameData.currentPlayer == 0);
+        assert(gameData.currentPot.eq(this.zeroBN));
+        assert(gameData.gameOracle.equals(gameOracle.publicKey));
+        assert(gameData.gameNumber == 0);
+        assert(gameData.maxBidThisRound.eq(this.zeroBN));
+        assert(gameData.maxNumberOfPlayers == 10);
+        assert(gameData.numberOfUsersJoined == 0);
+        assert(gameData.smallBlind.eq(smallBlind));
+        assert(gameData.timeoutInUnixDiff.eq(timeout));
+        assert(gameData.totalBidsThisRound.eq(this.zeroBN))
+        assert(gameData.baseMint.equals(mint));
 
         return game;
     }

@@ -6,7 +6,7 @@ use errors::{ SolPokerErrors };
 
 pub fn process(ctx : Context<PlayerMove>, user_move : UserMoves)-> Result<()> {
 
-    let game = &mut ctx.accounts.game.load_mut()?;
+    let game = &mut ctx.accounts.game;
     let max_bid_this_round = game.max_bid_this_round;
 
     let user_option = game.players.iter_mut().find(|x| x.user_pk == ctx.accounts.user.key());

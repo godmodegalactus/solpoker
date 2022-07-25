@@ -7,5 +7,5 @@ pub struct UpdateGame<'info> {
     pub oracle : Signer<'info>,
 
     #[account(mut)]
-    pub game : AccountLoader<'info, Game>,
+    pub game : Box<Account<'info, Game>>,
 }

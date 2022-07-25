@@ -5,7 +5,6 @@ use std::{mem::size_of};
 use anchor_spl::token::{  Mint,};
 
 #[derive(Accounts)]
-#[instruction(game_id: u8)]
 pub struct InitGame<'info> {
     #[account(mut)]
     pub manager : Signer<'info>,
@@ -18,12 +17,12 @@ pub struct InitGame<'info> {
 
     #[account(
         init,
-        seeds = [b"solpoker_game", manager.key().as_ref(), base_mint.key().as_ref(), &[game_id]],
+        seeds = [b"solpoker_game", manager.key().as_ref(), base_mint.key().as_ref()],
         bump,
-        space = 12 + size_of::<Game>(),
+        space = 8 + size_of::<Game>(),
         payer = manager,
     )]
-    pub game : AccountLoader<'info, Game>,
+    pub game : Box<Account<'info, Game>>,
 
     pub system_program : Program<'info, System>,
 }

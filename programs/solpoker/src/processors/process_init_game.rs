@@ -1,21 +1,25 @@
 use crate::{*, states::enums::CurrentGameState};
-use states::{ meta_data::MetaData };
+use states::{ meta_data::MetaData, enums::MAX_NUMBER_OF_PLAYERS };
 use instructions::init_game::InitGame;
 
 
-pub fn process( ctx: Context<InitGame>, game_id : u32, small_blind : u64, timeout_in_unix_diff: u64 ) -> Result<()> {
-    let game = &mut ctx.accounts.game.load_init()?;
+pub fn process( ctx: Context<InitGame>, small_blind : u64, timeout_in_unix_diff: u64 ) -> Result<()> {
+    let game = &mut ctx.accounts.game;
 
     game.meta_data = MetaData {
         data_type : states::enums::DataType::Game,
         version : 1,
         is_initialized : true,
     };
-    game.game_id = game_id;
+    game.manager = ctx.accounts.manager.key();
+    game.game_context = ctx.accounts.game_context.key();
     game.game_oracle = ctx.accounts.game_oracle.key();
-    game.base_mint = ctx.accounts.game_oracle.key();
+    game.base_mint = ctx.accounts.base_mint.key();
+    
     game.game_number = 0;
+    game.current_pot = 0;
     game.small_blind = small_blind;
+    game.max_number_of_players = MAX_NUMBER_OF_PLAYERS;
 
     let clock = solana_program::clock::Clock::get()?;
     game.timeout_in_unix_diff = timeout_in_unix_diff;

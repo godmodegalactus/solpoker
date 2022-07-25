@@ -7,7 +7,8 @@ use errors::{SolPokerErrors};
 pub fn process(ctx : Context<UpdateGame>, cards : [Card; 3]) -> Result<()> {
     let clock = solana_program::clock::Clock::get()?;
 
-    let game = &mut ctx.accounts.game.load_mut()?;
+    let game = &mut ctx.accounts.game;
+    game.check()?;
     if game.can_update || game.last_update_time + game.timeout_in_unix_diff < clock.unix_timestamp as u64 {
         Err(error!(SolPokerErrors::LastStateNotInTimeout))
     }

@@ -12,10 +12,10 @@ pub struct LeaveGame<'info> {
         constraint = user.meta_data.is_initialized == true,
         constraint = user.owner_pk == owner.key(),
     )]
-    pub user : Account<'info, User>,
+    pub user : Box<Account<'info, User>>,
 
     #[account(mut)]
-    pub game : AccountLoader<'info, Game>,
+    pub game : Box<Account<'info, Game>>,
 }
 
 #[derive(Accounts)]
@@ -27,8 +27,8 @@ pub struct LeaveGameForced<'info> {
         constraint = user.meta_data.data_type == DataType::User,
         constraint = user.meta_data.is_initialized == true,
     )]
-    pub user : Account<'info, User>,
+    pub user : Box<Account<'info, User>>,
 
     #[account(mut)]
-    pub game : AccountLoader<'info, Game>,
+    pub game : Box<Account<'info, Game>>,
 }

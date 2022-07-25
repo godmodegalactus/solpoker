@@ -2,11 +2,10 @@ use crate::*;
 use errors::{SolPokerErrors, check};
 
 pub fn process(ctx : Context<JoinGame>, lamports: u64) -> Result<()> {
-    let game = &mut ctx.accounts.game.load_mut()?;
-    game.check()?;
-    check(game.base_mint == ctx.accounts.user.base_mint.key(), SolPokerErrors::InvalidMint)?;
+    ctx.accounts.game.check()?;
+    check(ctx.accounts.game.base_mint == ctx.accounts.user.base_mint.key(), SolPokerErrors::InvalidMint)?;
     let user = &mut ctx.accounts.user;
-    game.add_player(ctx.accounts.owner.key(), user, lamports)?;
-    game.number_of_users_joined = game.number_of_users_joined.saturating_add(1);
+    ctx.accounts.game.add_player(ctx.accounts.owner.key(), user, lamports)?;
+    ctx.accounts.game.number_of_users_joined = ctx.accounts.game.number_of_users_joined.saturating_add(1);
     Ok(())
 }
