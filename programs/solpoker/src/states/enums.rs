@@ -6,7 +6,7 @@ pub const MAX_NUMBER_OF_PLAYERS : u8 = 10;
 #[repr(u8)]
 pub enum DataType {
     Unknown,
-    Manager,
+    Context,
     Game,
     User,
 }

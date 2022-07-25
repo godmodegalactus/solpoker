@@ -6,7 +6,7 @@ use crate::*;
 pub struct GameContext {
     pub meta_data: MetaData,
     // public key of manager
-    pub game_context : Pubkey,
+    pub manager : Pubkey,
     // game count
     pub count_of_games_currently_running : u32,
     // base mint

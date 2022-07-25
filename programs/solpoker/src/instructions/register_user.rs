@@ -10,7 +10,7 @@ pub struct RegisterUser<'info> {
     pub owner : Signer<'info>,
 
     #[account(
-        constraint = game_context.meta_data.data_type == DataType::Manager,
+        constraint = game_context.meta_data.data_type == DataType::Context,
         constraint = game_context.meta_data.is_initialized == true, 
     )]
     pub game_context : Box<Account<'info, GameContext>>,

@@ -11,7 +11,7 @@ pub struct InitGame<'info> {
     pub manager : Signer<'info>,
     #[account(mut)]
     pub game_oracle : Signer<'info>,
-    #[account( constraint = game_context.game_context == manager.key() )]
+    #[account( mut, constraint = game_context.manager == manager.key() )]
     pub game_context : Box<Account<'info, GameContext>>,
     #[account( constraint = game_context.base_mint == base_mint.key() )]
     pub base_mint : Box<Account<'info, Mint>>,

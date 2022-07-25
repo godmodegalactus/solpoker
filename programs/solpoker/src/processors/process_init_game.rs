@@ -21,5 +21,7 @@ pub fn process( ctx: Context<InitGame>, game_id : u32, small_blind : u64, timeou
     game.timeout_in_unix_diff = timeout_in_unix_diff;
     game.last_update_time = clock.unix_timestamp as u64;
     game.current_state = CurrentGameState::NotYetStarted;
+    ctx.accounts.game_context.count_of_games_currently_running = ctx.accounts.game_context.count_of_games_currently_running.saturating_add(1);
+
     Ok(())
 }

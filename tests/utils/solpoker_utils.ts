@@ -5,12 +5,28 @@ import {
     TOKEN_PROGRAM_ID,
     createMint,
   } from "@solana/spl-token";
+import { assert } from "chai";
+
+import * as mlog from "mocha-logger"
+
+// const DataType = {
+//     Unknown: {},
+//     Context: {},
+//     Game: {},
+//     User: {},
+//   };
+
+type DataType = | {unknown:{}} | {context:{}} | {game:{}} | {user:{}};
+type SolPokerInstance = anchor.IdlAccounts<Solpoker>["gameContext"];
+type Metadata = anchor.IdlTypes<Solpoker>["MetaData"];
+type GameInstance = anchor.IdlAccounts<Solpoker>["game"];
 
 export class SolpokerUtils {
 
     connection : web3.Connection;
     program : Program<Solpoker>;
     programId : web3.PublicKey;
+
     constructor(connection : web3.Connection, program : Program<Solpoker>){
         this.connection = connection;
         this.program = program;
@@ -36,6 +52,25 @@ export class SolpokerUtils {
                 rent : web3.SYSVAR_RENT_PUBKEY,
             }).signers([manager]).rpc();
         console.log("Your transaction signature", tx);
+        this.connection.confirmTransaction(tx);
+
+        type DT = anchor.IdlTypes<Solpoker>["DataType"] & { ty : DataType };
+        
+        const instance : SolPokerInstance = await this.program.account.gameContext.fetch(gameContext);
+
+        assert(instance.manager.equals(manager.publicKey));
+        assert(instance.baseMint.equals(mint));
+        assert(instance.countOfGamesCurrentlyRunning == 0);
+        assert(instance.managerFeesInBps == 10);
+        assert(instance.treasuryAccount.equals(treasuryAccount));
+        assert(instance.treasuryCollected.eq(new anchor.BN(0)));
+        
+        const metaData : Metadata = instance.metaData;
+        assert(metaData.isInitialized == true);
+        assert(metaData.version == 1);
+        const dataType : DT = metaData.dataType;
+        //mlog.log(dataType.ty == DataType.)
+
         return [gameContext, treasuryAccount]
     }
 
@@ -48,6 +83,12 @@ export class SolpokerUtils {
     ) : Promise<web3.PublicKey> 
     {
         const [game, _gameBump] = await web3.PublicKey.findProgramAddress( [Buffer.from("solpoker_game"), manager.publicKey.toBuffer(), mint.toBuffer(), new anchor.BN(gameNumber).toBuffer("le")], this.programId);
+
+        let countOfGamesCurrentlyRunning = 0;
+        {
+            const instance : SolPokerInstance = await this.program.account.gameContext.fetch(gameContext);
+            countOfGamesCurrentlyRunning = instance.countOfGamesCurrentlyRunning;
+        }
         
         await this.program.methods
             .initializeGame(gameNumber, new anchor.BN(web3.LAMPORTS_PER_SOL),new anchor.BN(20))
@@ -61,6 +102,21 @@ export class SolpokerUtils {
             })
             .signers([manager, gameOracle])
             .rpc();
+
+        type DataType = anchor.IdlTypes<Solpoker>["DataType"];
+        const gameData : GameInstance = await this.program.account.game.fetch(game);
+
+        {
+            const instance : SolPokerInstance = await this.program.account.gameContext.fetch(gameContext);
+            assert( instance.countOfGamesCurrentlyRunning - countOfGamesCurrentlyRunning == 1);
+        }
+        
+        const metaData : Metadata = gameData.metaData;
+        assert(metaData.isInitialized == true);
+        assert(metaData.version == 1);
+        const dataType : DataType = metaData.dataType;
+        //mlog.log(dataType == {name : "Game"});
+
         return game;
     }
 }
